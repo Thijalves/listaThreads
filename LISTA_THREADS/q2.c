@@ -67,21 +67,23 @@ int main(void){
     for(int i = 0; i < NUMTRAINS; i++){
         taskids[i] = (int *) malloc(sizeof(int));
         *taskids[i] = i;
-        pthread_create(&threads[i], NULL, train, (void *)taskids[i]);
+        if(pthread_create(&threads[i], NULL, train, (void *)taskids[i])){
+            printf("Error while creating threads\n");
+            exit(1);
+        }
     }
     
-    
-
     //joins every train thread
-    for(int i = 0; i < NUMTRAINS; i++)
-        pthread_join(threads[i], NULL);
-    
+    for(int i = 0; i < NUMTRAINS; i++){
+        if(pthread_join(threads[i], NULL)){
+            printf("Error while joining threads\n");
+            exit(1);
+        }
+    }
 
-    
     //destroys intersections mutexes
     for(int i = 0; i < NUMINTERSECTIONS; i++)
         pthread_mutex_destroy(&intersectionsMutexes[i]);
-    
 
     //destroys condition variables
     for(int i = 0; i < NUMINTERSECTIONS; i++)

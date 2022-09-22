@@ -40,9 +40,11 @@ void *writer(void *args){
                 //waits for reading threads to finish
                 pthread_cond_wait(&finishReading[databaseIndex], &waitingToWriteMutex[databaseIndex]);
             }
+                //if this writer thread is allowed to proceed
                 printf("[%d] Writer %d allowed to proceed | currReading = %d\n", databaseIndex, threadId, currReading[databaseIndex]);
         pthread_mutex_unlock(&waitingToWriteMutex[databaseIndex]);
 
+        //tries to lock the mutex, if it cannot, waits on the condition variable
         while(pthread_mutex_trylock(&databaseMutex[databaseIndex])){
             pthread_mutex_lock(&waitingToWriteMutex[databaseIndex]);
                 pthread_cond_wait(&finishWriting[databaseIndex], &waitingToWriteMutex[databaseIndex]);
@@ -50,13 +52,14 @@ void *writer(void *args){
             pthread_mutex_unlock(&waitingToWriteMutex[databaseIndex]);
         }
         // pthread_mutex_lock(&databaseMutex[databaseIndex]);
-            //writes on database
+            //writes a random number on database
             database[databaseIndex] = rand();
             printf("[%d] Writer %d writing\n", databaseIndex, threadId);
             //sleeps for a random time from 0 to 1,5 seconds
             usleep(rand()%1500000);
         pthread_mutex_unlock(&databaseMutex[databaseIndex]);
 
+        //after finishing writing, decrements waiting to write counter
         pthread_mutex_lock(&waitingToWriteMutex[databaseIndex]);
             waitingToWrite[databaseIndex]--;
         pthread_mutex_unlock(&waitingToWriteMutex[databaseIndex]);
@@ -90,6 +93,7 @@ void *reader(void *args){
         //sleeps for a random time from 0 to 1,5 seconds
         usleep(rand()%1500000);
 
+        //after it finishes reading, decrements current reading counter
         pthread_mutex_lock(&waitingToWriteMutex[databaseIndex]);
             currReading[databaseIndex]--;
         pthread_mutex_unlock(&waitingToWriteMutex[databaseIndex]);
@@ -133,7 +137,11 @@ int main(void){
     for(int i = 0; i < numReader; i++){
         readerIds[i] = (int *) malloc(sizeof(int));
         *readerIds[i] = i;
-        pthread_create(&readerThreads[i], NULL, reader, (void *)readerIds[i]);
+        if(pthread_create(&readerThreads[i], NULL, reader, (void *)readerIds[i])){
+            printf("Error while creating threads \n");
+            exit(1);
+        }
+        
     }
 
     //creates writer threads
@@ -141,17 +149,27 @@ int main(void){
     for(int i = 0; i < numWriter; i++){
         writerIds[i] = (int *) malloc(sizeof(int));
         *writerIds[i] = i;
-        pthread_create(&writerThreads[i], NULL, writer, (void *)writerIds[i]);
+        if(pthread_create(&writerThreads[i], NULL, writer, (void *)writerIds[i])){
+            printf("Error while creating threads \n");
+            exit(1);
+        }
     }
 
     //joins reader threads
-    for(int i = 0; i < numReader; i++)
-        pthread_join(readerThreads[i], NULL);
+    for(int i = 0; i < numReader; i++){
+        if(pthread_join(readerThreads[i], NULL)){
+            printf("Error while joining threads\n");
+            exit(1);
+        }
+    } 
 
     //joins writer threads
-    for(int i = 0; i < numWriter; i++)
-        pthread_join(writerThreads[i], NULL);
-
+    for(int i = 0; i < numWriter; i++){
+        if(pthread_join(writerThreads[i], NULL)){
+           printf("Error while joining threads\n");
+            exit(1); 
+        }
+    }
 
     //initializes mutexes
     for(int i = 0; i < DATABASESIZE; i++)
