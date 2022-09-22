@@ -10,7 +10,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //struct para argumentos das threads
 typedef struct Trio{
-    char **matriz;
+    int **matriz;
     int index, size;
 } Trio;
 
@@ -19,7 +19,7 @@ void *checkLine(void *args){
     // casting da struct
     int size = ((Trio*)args)->size;
     int index = ((Trio*)args)->index;
-    char **matriz =  ((Trio*)args)->matriz;
+    int **matriz =  ((Trio*)args)->matriz;
 
     //procura por elementos repetidos
     for(int j = 0; j < size-1; j++)          
@@ -39,7 +39,7 @@ void *checkColumn(void *args){
     // casting da struct
     int size = ((Trio*)args)->size;
     int index = ((Trio*)args)->index;
-    char **matriz =  ((Trio*)args)->matriz;
+    int **matriz =  ((Trio*)args)->matriz;
 
     //procura por elementos repetidos
     for(int j = 0; j < size-1; j++)          
@@ -60,10 +60,10 @@ int main (){
     int size = 5;
 
     //aloca a matriz do tamanho desejado
-    char** matriz = (char**) malloc(size * sizeof(char*));
+    int** matriz = (int**) malloc(size * sizeof(int*));
     if(matriz == NULL) exit(0);
     for (int i = 0; i < size; i++){
-        matriz[i] = (char*) malloc(size * sizeof(char));
+        matriz[i] = (int*) malloc(size * sizeof(int));
         if(matriz[i] == NULL) exit(0);
     }
 
