@@ -9,21 +9,21 @@
 #define AVAILABLE 'A'
 
 int left(int id){
-    int left;
-    left = (id+N-1)%N;
+    int left = (id+N-1)%N;
     return left;
 }
 
 int right(int id){
-    int right;
-    right = (id+1)%N;
+    int right = (id+1)%N;
     return right;
 }
 
+//funcoes
 void think(int id);    
 void get_forks(int id);
 void put_forks(int id);
 void* filosofo(void* args);
+void draw();
 
 //mutex para o array todo
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -33,21 +33,12 @@ pthread_cond_t cond[N] = {PTHREAD_COND_INITIALIZER};
 
 //array com o estado de cada garfo
 char estadoGarfos[N];
-//array com o estado de cada filosofos
+//array com o estado de cada filosofo
 char estadoFilos[N];
-
-//funcao para representar a mesa
-void draw(){
-    printf("---------\n");
-    printf("  %c   %c  \n", estadoFilos[0], estadoFilos[1]);
-    printf(" %c     %c  \n", estadoFilos[4], estadoFilos[2]);
-    printf("    %c  \n", estadoFilos[3]);
-    printf("---------\n");
-}
 
 int main (){
 
-    //ilustra a mesa dos filosofos onde H eh hungry, E eh eating e T significa thinking 
+    //ilustra a mesa dos filosofos onde H = hungry, E = eating e T = thinking 
     for(int i = 0; i < 5; i++)
         estadoFilos[i] = 'T';
     draw();
@@ -58,18 +49,23 @@ int main (){
     for(int i = 0; i < 5; i++){
         philosoherID[i] = (int *) malloc(sizeof(int)); 
         *philosoherID[i] = i;
-        pthread_create(&threads[i], NULL, filosofo, (void*) philosoherID[i]);
+        if(pthread_create(&threads[i], NULL, filosofo, (void*) philosoherID[i]))
+            printf("Erro na criacao de threads");
     }
 
     for(int i = 0; i < 5; i++)
-        pthread_join(threads[i], NULL);
+        if(pthread_join(threads[i], NULL))
+            printf("Erro na juncao de threads");  
 
     return 0;
 }
 
 //funcoes chamadas pelo filosofo
 void* filosofo(void* args){
+    //casting do argumento
     int id = *((int*) args);
+
+    //rotina do filosofo
     while (1){
         sleep(1); //think
         get_forks(id);
@@ -122,5 +118,13 @@ void put_forks(int id){
     //destrava o mutex
     pthread_mutex_unlock(&mutex);
 
+}
 
+//funcao para representar a mesa
+void draw(){
+    printf("---------\n");
+    printf("  %c   %c  \n", estadoFilos[0], estadoFilos[1]);
+    printf(" %c     %c  \n", estadoFilos[4], estadoFilos[2]);
+    printf("    %c  \n", estadoFilos[3]);
+    printf("---------\n");
 }
